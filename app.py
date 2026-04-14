@@ -1,5 +1,6 @@
 import sys
 import os
+import signal
 from pathlib import Path
 
 import fitz
@@ -23,7 +24,7 @@ def bootstrap_qt_plugin_paths() -> None:
 # Ensure Qt sees plugin paths before importing QtCore/QtWidgets modules.
 bootstrap_qt_plugin_paths()
 
-from PySide6.QtCore import QRect, QRectF, Qt, Signal
+from PySide6.QtCore import QRect, QRectF, Qt, Signal, QTimer
 from PySide6.QtGui import QAction, QImage, QPen, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -302,6 +303,13 @@ class PDFCropperWindow(QMainWindow):
 
 def main() -> None:
     app = QApplication(sys.argv)
+
+    # Keep Python signal handling responsive while Qt event loop is running.
+    signal.signal(signal.SIGINT, lambda _sig, _frame: app.quit())
+    heartbeat = QTimer()
+    heartbeat.timeout.connect(lambda: None)
+    heartbeat.start(200)
+
     window = PDFCropperWindow()
     window.show()
     sys.exit(app.exec())
